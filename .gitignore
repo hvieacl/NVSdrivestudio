@@ -188,3 +188,22 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 local_scripts
+
+# OmniRe local workflow: keep scripts and docs, ignore generated data/results.
+OutPut/
+visualization_outputs/
+可视化结果/
+*.tfrecord
+*.pth
+*.pt
+*.ckpt
+*.mp4
+*.avi
+*.mov
+*.ply
+!omnire_workflow/**/*.sh
+
+# Bundled external tools: keep source code, ignore generated/sample datasets.
+external_tools/**/data/
+external_tools/**/dataset/KITTI/
+external_tools/**/dataset/waymo/
