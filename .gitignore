@@ -30,6 +30,7 @@ sky_masks/
 fine_dynamic_masks_example/
 *.sh
 pandaset-devkit/
+可视化结果/
 
 # C extensions
 *.so
