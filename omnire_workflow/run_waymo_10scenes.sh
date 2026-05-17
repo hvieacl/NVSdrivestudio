@@ -14,6 +14,14 @@ PROJECT="${PROJECT:-waymo_training_10scenes}"
 CONFIG_FILE="${CONFIG_FILE:-configs/omnire.yaml}"
 DATASET="${DATASET:-waymo/3cams}"
 SKIP_PREPROCESS="${SKIP_PREPROCESS:-0}"
+REQUIRE_SKY_MASKS="${REQUIRE_SKY_MASKS:-1}"
+AUTO_EXTRACT_MASKS="${AUTO_EXTRACT_MASKS:-1}"
+SEGFORMER_ENV_NAME="${SEGFORMER_ENV_NAME:-segformer}"
+SEGFORMER_ROOT="${SEGFORMER_ROOT:-$REPO_ROOT/../SegFormer}"
+SEGFORMER_CHECKPOINT="${SEGFORMER_CHECKPOINT:-$SEGFORMER_ROOT/pretrained/segformer.b5.1024x1024.city.160k.pth}"
+MASK_DEVICE="${MASK_DEVICE:-cuda:0}"
+PROCESS_FINE_DYNAMIC_MASKS="${PROCESS_FINE_DYNAMIC_MASKS:-1}"
+EXTRA_ARGS="${EXTRA_ARGS:-}"
 
 export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
 
@@ -28,7 +36,36 @@ if [[ "$SKIP_PREPROCESS" != "1" ]]; then
     --process_keys images lidar calib pose dynamic_masks objects
 fi
 
+if [[ "$REQUIRE_SKY_MASKS" == "1" ]]; then
+  echo "[workflow] Checking Waymo sky masks for scenes: $SCENE_IDS"
+  if ! conda run -n "$ENV_NAME" python omnire_workflow/semantic_masks/cli.py check \
+    --data_root data/waymo/processed/training \
+    --scene_ids "$SCENE_IDS"; then
+    if [[ "$AUTO_EXTRACT_MASKS" != "1" ]]; then
+      echo "[ERROR] Missing sky masks. Run omnire_workflow/semantic_masks/extract_waymo_masks.sh first, or set AUTO_EXTRACT_MASKS=1." >&2
+      exit 1
+    fi
+    echo "[workflow] Missing sky masks; running SegFormer extraction with env: $SEGFORMER_ENV_NAME"
+    mask_args=()
+    if [[ "$PROCESS_FINE_DYNAMIC_MASKS" == "1" ]]; then
+      mask_args+=(--process_dynamic_mask)
+    fi
+    conda run -n "$SEGFORMER_ENV_NAME" python omnire_workflow/semantic_masks/cli.py extract \
+      --data_root data/waymo/processed/training \
+      --scene_ids "$SCENE_IDS" \
+      --segformer_path "$SEGFORMER_ROOT" \
+      --checkpoint "$SEGFORMER_CHECKPOINT" \
+      --device "$MASK_DEVICE" \
+      "${mask_args[@]}"
+    conda run -n "$ENV_NAME" python omnire_workflow/semantic_masks/cli.py check \
+      --data_root data/waymo/processed/training \
+      --scene_ids "$SCENE_IDS"
+  fi
+fi
+
+read -r -a extra_args <<< "$EXTRA_ARGS"
 for scene_idx in $SCENE_IDS; do
+  echo "[workflow] Training scene ${scene_idx}"
   conda run -n "$ENV_NAME" python tools/train.py \
     --config_file "$CONFIG_FILE" \
     --output_root "$OUTPUT_ROOT" \
@@ -37,5 +74,6 @@ for scene_idx in $SCENE_IDS; do
     dataset="$DATASET" \
     data.scene_idx="$scene_idx" \
     data.start_timestep="$START_TIMESTEP" \
-    data.end_timestep="$END_TIMESTEP"
+    data.end_timestep="$END_TIMESTEP" \
+    "${extra_args[@]}"
 done
