@@ -23,6 +23,7 @@ MASK_DEVICE="${MASK_DEVICE:-cuda:0}"
 PROCESS_FINE_DYNAMIC_MASKS="${PROCESS_FINE_DYNAMIC_MASKS:-1}"
 REQUIRE_HUMANPOSE="${REQUIRE_HUMANPOSE:-1}"
 AUTO_DOWNLOAD_HUMANPOSE="${AUTO_DOWNLOAD_HUMANPOSE:-1}"
+HUMANPOSE_ARCHIVE_NAME="${HUMANPOSE_ARCHIVE_NAME:-waymo_processed_humanpose.zip}"
 REQUIRE_SMPL_MODEL="${REQUIRE_SMPL_MODEL:-1}"
 SMPL_MODEL="${SMPL_MODEL:-smpl_models/SMPL_NEUTRAL.pkl}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
@@ -81,7 +82,9 @@ if [[ "$REQUIRE_HUMANPOSE" == "1" ]]; then
     if [[ "$AUTO_DOWNLOAD_HUMANPOSE" == "1" ]]; then
       echo "[workflow] Trying to download DriveStudio preprocessed Waymo humanpose package."
       conda run -n "$ENV_NAME" python -m pip install gdown
-      conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py download-preprocessed --target_dir data
+      conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py download-preprocessed \
+        --target_dir data \
+        --archive_name "$HUMANPOSE_ARCHIVE_NAME"
     fi
     conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py check \
       --data_root data/waymo/processed/training \

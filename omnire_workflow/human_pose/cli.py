@@ -53,7 +53,11 @@ def check(args: argparse.Namespace) -> int:
 def download_preprocessed(args: argparse.Namespace) -> int:
     target_dir = Path(args.target_dir)
     target_dir.mkdir(parents=True, exist_ok=True)
-    archive = target_dir / "waymo_preprocess_humanpose.zip"
+    archive = target_dir / args.archive_name
+    legacy_archive = target_dir / "waymo_preprocess_humanpose.zip"
+    if not archive.exists() and legacy_archive.exists():
+        print(f"[humanpose-download] using legacy archive name: {legacy_archive}")
+        archive = legacy_archive
     if not archive.exists():
         command = [
             sys.executable,
@@ -111,6 +115,7 @@ def build_parser() -> argparse.ArgumentParser:
     download_parser = subparsers.add_parser("download-preprocessed", help="Download official preprocessed Waymo humanpose zip.")
     download_parser.add_argument("--target_dir", default="data")
     download_parser.add_argument("--gdown_id", default=WAYMO_HUMANPOSE_GDOWN_ID)
+    download_parser.add_argument("--archive_name", default="waymo_processed_humanpose.zip")
     download_parser.set_defaults(func=download_preprocessed)
 
     extract_parser = subparsers.add_parser("extract", help="Run the 4D-Humans based extraction pipeline.")

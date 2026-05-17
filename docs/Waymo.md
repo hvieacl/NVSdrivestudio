@@ -160,12 +160,12 @@ We have uploaded preprocessed human pose data for a subset of Waymo scenes to [G
 
 ```shell
 # https://drive.google.com/file/d/1QrtMrPAQhfSABpfgQWJZA2o_DDamL_7_/view?usp=drive_link
-# filename: waymo_preprocess_humanpose.zip
+# filename: waymo_processed_humanpose.zip
 cd data
 gdown 1QrtMrPAQhfSABpfgQWJZA2o_DDamL_7_ 
 
-unzip waymo_preprocess_humanpose.zip
-rm waymo_preprocess_humanpose.zip
+unzip waymo_processed_humanpose.zip
+rm waymo_processed_humanpose.zip
 ```
 
 #### Option 2: Run the Extraction Pipeline

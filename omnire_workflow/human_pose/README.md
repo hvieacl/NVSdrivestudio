@@ -44,10 +44,10 @@ DriveStudio provides preprocessed humanpose for the Waymo example scenes:
 bash omnire_workflow/human_pose/download_waymo_humanpose.sh
 ```
 
-If Google Drive is unavailable on the server, download `waymo_preprocess_humanpose.zip` manually using the ID in `docs/HumanPose.md`, place it under `data/`, then run:
+If Google Drive is unavailable on the server, download `waymo_processed_humanpose.zip` manually using the ID in `docs/HumanPose.md`, place it under `data/`, then run:
 
 ```bash
-unzip -o data/waymo_preprocess_humanpose.zip -d data
+unzip -o data/waymo_processed_humanpose.zip -d data
 ```
 
 ## Run Human Pose Extraction Yourself
