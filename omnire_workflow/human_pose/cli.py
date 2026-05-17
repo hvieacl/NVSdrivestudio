@@ -1,0 +1,133 @@
+"""Check and prepare Waymo human pose data for OmniRe."""
+
+from __future__ import annotations
+
+import argparse
+import subprocess
+import sys
+from pathlib import Path
+from typing import List, Optional
+
+
+DEFAULT_SCENES = "0 1 4 8 32 102 109 114 149 156"
+WAYMO_HUMANPOSE_GDOWN_ID = "1QrtMrPAQhfSABpfgQWJZA2o_DDamL_7_"
+
+
+def parse_ids(value: Optional[str]) -> List[int]:
+    if not value:
+        return [int(v) for v in DEFAULT_SCENES.split()]
+    return [int(v) for v in value.replace(",", " ").split()]
+
+
+def scene_dir(data_root: Path, scene_id: int) -> Path:
+    return data_root / f"{scene_id:03d}"
+
+
+def check(args: argparse.Namespace) -> int:
+    data_root = Path(args.data_root)
+    smpl_model = Path(args.smpl_model)
+    scenes = parse_ids(args.scene_ids)
+    failed = False
+
+    if args.require_smpl_model:
+        if smpl_model.exists() and smpl_model.stat().st_size > 0:
+            print(f"[humanpose-check] SMPL model OK: {smpl_model}")
+        else:
+            print(f"[humanpose-check] missing SMPL model: {smpl_model}")
+            print("[humanpose-check] Download SMPL v1.1 from https://smpl.is.tue.mpg.de/download.php")
+            print("[humanpose-check] Copy basicmodel_neutral_lbs_10_207_0_v1.1.0.pkl to smpl_models/SMPL_NEUTRAL.pkl")
+            failed = True
+
+    for scene_id in scenes:
+        root = scene_dir(data_root, scene_id)
+        smpl_pkl = root / "humanpose" / "smpl.pkl"
+        if smpl_pkl.exists() and smpl_pkl.stat().st_size > 0:
+            print(f"[humanpose-check] scene {scene_id}: humanpose OK ({smpl_pkl})")
+        else:
+            print(f"[humanpose-check] scene {scene_id}: missing {smpl_pkl}")
+            failed = True
+
+    return 1 if failed else 0
+
+
+def download_preprocessed(args: argparse.Namespace) -> int:
+    target_dir = Path(args.target_dir)
+    target_dir.mkdir(parents=True, exist_ok=True)
+    archive = target_dir / "waymo_preprocess_humanpose.zip"
+    if not archive.exists():
+        command = [
+            sys.executable,
+            "-m",
+            "gdown",
+            args.gdown_id,
+            "-O",
+            str(archive),
+        ]
+        print("[humanpose-download] " + " ".join(command), flush=True)
+        rc = subprocess.call(command)
+        if rc != 0:
+            print("[humanpose-download] gdown failed. Download manually from DriveStudio docs/Waymo.md.", file=sys.stderr)
+            return rc
+    else:
+        print(f"[humanpose-download] archive already exists: {archive}")
+
+    command = ["unzip", "-o", str(archive), "-d", str(target_dir)]
+    print("[humanpose-download] " + " ".join(command), flush=True)
+    return subprocess.call(command)
+
+
+def extract(args: argparse.Namespace) -> int:
+    command = [
+        sys.executable,
+        "datasets/tools/humanpose_process.py",
+        "--dataset",
+        "waymo",
+        "--data_root",
+        args.data_root,
+        "--scene_ids",
+        *[str(v) for v in parse_ids(args.scene_ids)],
+        "--fps",
+        str(args.fps),
+    ]
+    if args.save_temp:
+        command.append("--save_temp")
+    if args.verbose:
+        command.append("--verbose")
+    print("[humanpose-extract] " + " ".join(command), flush=True)
+    return subprocess.call(command)
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    check_parser = subparsers.add_parser("check", help="Check SMPL model and per-scene humanpose files.")
+    check_parser.add_argument("--data_root", default="data/waymo/processed/training")
+    check_parser.add_argument("--scene_ids", default=DEFAULT_SCENES)
+    check_parser.add_argument("--smpl_model", default="smpl_models/SMPL_NEUTRAL.pkl")
+    check_parser.add_argument("--require_smpl_model", action="store_true")
+    check_parser.set_defaults(func=check)
+
+    download_parser = subparsers.add_parser("download-preprocessed", help="Download official preprocessed Waymo humanpose zip.")
+    download_parser.add_argument("--target_dir", default="data")
+    download_parser.add_argument("--gdown_id", default=WAYMO_HUMANPOSE_GDOWN_ID)
+    download_parser.set_defaults(func=download_preprocessed)
+
+    extract_parser = subparsers.add_parser("extract", help="Run the 4D-Humans based extraction pipeline.")
+    extract_parser.add_argument("--data_root", default="data/waymo/processed/training")
+    extract_parser.add_argument("--scene_ids", default=DEFAULT_SCENES)
+    extract_parser.add_argument("--save_temp", action="store_true")
+    extract_parser.add_argument("--verbose", action="store_true")
+    extract_parser.add_argument("--fps", type=int, default=12)
+    extract_parser.set_defaults(func=extract)
+
+    return parser
+
+
+def main() -> int:
+    args = build_parser().parse_args()
+    return args.func(args)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

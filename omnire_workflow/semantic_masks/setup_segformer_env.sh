@@ -25,7 +25,7 @@ if ! conda env list | awk '{print $1}' | grep -qx "$SEGFORMER_ENV_NAME"; then
   conda create -n "$SEGFORMER_ENV_NAME" python=3.8 -y
 fi
 
-conda run -n "$SEGFORMER_ENV_NAME" python -m pip install --upgrade "pip<24"
+conda run -n "$SEGFORMER_ENV_NAME" python -m pip install --upgrade pip==23.3.2
 conda run -n "$SEGFORMER_ENV_NAME" python -m pip install \
   torch==1.8.1+cu111 torchvision==0.9.1+cu111 torchaudio==0.8.1 \
   -f https://download.pytorch.org/whl/torch_stable.html
@@ -41,5 +41,9 @@ conda run -n "$SEGFORMER_ENV_NAME" python -m pip install -e "$SEGFORMER_ROOT"
 
 mkdir -p "$SEGFORMER_ROOT/pretrained"
 echo "[OK] SegFormer env is ready: $SEGFORMER_ENV_NAME"
-echo "[NEXT] Put segformer.b5.1024x1024.city.160k.pth under:"
-echo "       $SEGFORMER_ROOT/pretrained/"
+echo "[NEXT] Download the checkpoint with:"
+echo "       bash omnire_workflow/semantic_masks/download_segformer_checkpoint.sh"
+
+if [[ "${DOWNLOAD_SEGFORMER_CHECKPOINT:-0}" == "1" ]]; then
+  bash omnire_workflow/semantic_masks/download_segformer_checkpoint.sh
+fi

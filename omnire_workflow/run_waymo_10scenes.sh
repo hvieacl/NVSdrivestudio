@@ -21,6 +21,10 @@ SEGFORMER_ROOT="${SEGFORMER_ROOT:-$REPO_ROOT/../SegFormer}"
 SEGFORMER_CHECKPOINT="${SEGFORMER_CHECKPOINT:-$SEGFORMER_ROOT/pretrained/segformer.b5.1024x1024.city.160k.pth}"
 MASK_DEVICE="${MASK_DEVICE:-cuda:0}"
 PROCESS_FINE_DYNAMIC_MASKS="${PROCESS_FINE_DYNAMIC_MASKS:-1}"
+REQUIRE_HUMANPOSE="${REQUIRE_HUMANPOSE:-1}"
+AUTO_DOWNLOAD_HUMANPOSE="${AUTO_DOWNLOAD_HUMANPOSE:-1}"
+REQUIRE_SMPL_MODEL="${REQUIRE_SMPL_MODEL:-1}"
+SMPL_MODEL="${SMPL_MODEL:-smpl_models/SMPL_NEUTRAL.pkl}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
 
 export PYTHONPATH="$REPO_ROOT${PYTHONPATH:+:$PYTHONPATH}"
@@ -60,6 +64,30 @@ if [[ "$REQUIRE_SKY_MASKS" == "1" ]]; then
     conda run -n "$ENV_NAME" python omnire_workflow/semantic_masks/cli.py check \
       --data_root data/waymo/processed/training \
       --scene_ids "$SCENE_IDS"
+  fi
+fi
+
+if [[ "$REQUIRE_HUMANPOSE" == "1" ]]; then
+  echo "[workflow] Checking Waymo humanpose/SMPL prerequisites for scenes: $SCENE_IDS"
+  humanpose_args=()
+  if [[ "$REQUIRE_SMPL_MODEL" == "1" ]]; then
+    humanpose_args+=(--require_smpl_model)
+  fi
+  if ! conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py check \
+    --data_root data/waymo/processed/training \
+    --scene_ids "$SCENE_IDS" \
+    --smpl_model "$SMPL_MODEL" \
+    "${humanpose_args[@]}"; then
+    if [[ "$AUTO_DOWNLOAD_HUMANPOSE" == "1" ]]; then
+      echo "[workflow] Trying to download DriveStudio preprocessed Waymo humanpose package."
+      conda run -n "$ENV_NAME" python -m pip install gdown
+      conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py download-preprocessed --target_dir data
+    fi
+    conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py check \
+      --data_root data/waymo/processed/training \
+      --scene_ids "$SCENE_IDS" \
+      --smpl_model "$SMPL_MODEL" \
+      "${humanpose_args[@]}"
   fi
 fi
 

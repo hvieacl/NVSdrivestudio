@@ -10,6 +10,20 @@ Create the SegFormer mask environment:
 
 ```bash
 bash omnire_workflow/semantic_masks/setup_segformer_env.sh
+bash omnire_workflow/semantic_masks/download_segformer_checkpoint.sh
+```
+
+Check/download humanpose prerequisites:
+
+```bash
+SCENE_IDS="114" bash omnire_workflow/human_pose/check_waymo_humanpose.sh
+bash omnire_workflow/human_pose/download_waymo_humanpose.sh
+```
+
+Run full preflight before long training:
+
+```bash
+SCENE_IDS="114" bash omnire_workflow/preflight_waymo_10scenes.sh
 ```
 
 Extract required sky masks for one scene:

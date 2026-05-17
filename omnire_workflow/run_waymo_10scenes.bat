@@ -16,6 +16,10 @@ if "%SEGFORMER_ROOT%"=="" set "SEGFORMER_ROOT=%CD%\..\SegFormer"
 if "%SEGFORMER_CHECKPOINT%"=="" set "SEGFORMER_CHECKPOINT=%SEGFORMER_ROOT%\pretrained\segformer.b5.1024x1024.city.160k.pth"
 if "%MASK_DEVICE%"=="" set "MASK_DEVICE=cuda:0"
 if "%PROCESS_FINE_DYNAMIC_MASKS%"=="" set "PROCESS_FINE_DYNAMIC_MASKS=1"
+if "%REQUIRE_HUMANPOSE%"=="" set "REQUIRE_HUMANPOSE=1"
+if "%AUTO_DOWNLOAD_HUMANPOSE%"=="" set "AUTO_DOWNLOAD_HUMANPOSE=1"
+if "%REQUIRE_SMPL_MODEL%"=="" set "REQUIRE_SMPL_MODEL=1"
+if "%SMPL_MODEL%"=="" set "SMPL_MODEL=smpl_models\SMPL_NEUTRAL.pkl"
 if "%EXTRA_ARGS%"=="" set "EXTRA_ARGS="
 set "PYTHONPATH=%CD%"
 if not "%SKIP_PREPROCESS%"=="1" (
@@ -33,6 +37,21 @@ if "%REQUIRE_SKY_MASKS%"=="1" (
     if "%PROCESS_FINE_DYNAMIC_MASKS%"=="1" set "MASK_ARGS=--process_dynamic_mask"
     conda run -n "%SEGFORMER_ENV_NAME%" python omnire_workflow\semantic_masks\cli.py extract --data_root data\waymo\processed\training --scene_ids "%SCENE_IDS%" --segformer_path "%SEGFORMER_ROOT%" --checkpoint "%SEGFORMER_CHECKPOINT%" --device "%MASK_DEVICE%" !MASK_ARGS!
     conda run -n "%ENV_NAME%" python omnire_workflow\semantic_masks\cli.py check --data_root data\waymo\processed\training --scene_ids "%SCENE_IDS%"
+    if errorlevel 1 exit /b 1
+  )
+)
+if "%REQUIRE_HUMANPOSE%"=="1" (
+  echo [workflow] Checking Waymo humanpose/SMPL prerequisites for scenes: %SCENE_IDS%
+  set "HUMANPOSE_ARGS="
+  if "%REQUIRE_SMPL_MODEL%"=="1" set "HUMANPOSE_ARGS=--require_smpl_model"
+  conda run -n "%ENV_NAME%" python omnire_workflow\human_pose\cli.py check --data_root data\waymo\processed\training --scene_ids "%SCENE_IDS%" --smpl_model "%SMPL_MODEL%" !HUMANPOSE_ARGS!
+  if errorlevel 1 (
+    if "%AUTO_DOWNLOAD_HUMANPOSE%"=="1" (
+      echo [workflow] Trying to download DriveStudio preprocessed Waymo humanpose package.
+      conda run -n "%ENV_NAME%" python -m pip install gdown
+      conda run -n "%ENV_NAME%" python omnire_workflow\human_pose\cli.py download-preprocessed --target_dir data
+    )
+    conda run -n "%ENV_NAME%" python omnire_workflow\human_pose\cli.py check --data_root data\waymo\processed\training --scene_ids "%SCENE_IDS%" --smpl_model "%SMPL_MODEL%" !HUMANPOSE_ARGS!
     if errorlevel 1 exit /b 1
   )
 )

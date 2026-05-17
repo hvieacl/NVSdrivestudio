@@ -10,12 +10,13 @@ Create the SegFormer environment:
 bash omnire_workflow/semantic_masks/setup_segformer_env.sh
 ```
 
-Download `segformer.b5.1024x1024.city.160k.pth` and place it under:
+Download `segformer.b5.1024x1024.city.160k.pth`:
 
-```text
-../SegFormer/pretrained/segformer.b5.1024x1024.city.160k.pth
+```bash
+bash omnire_workflow/semantic_masks/download_segformer_checkpoint.sh
 ```
 
+The default target is `../SegFormer/pretrained/segformer.b5.1024x1024.city.160k.pth`.
 You can override paths with `SEGFORMER_ROOT` and `SEGFORMER_CHECKPOINT`.
 
 ## Extract Masks

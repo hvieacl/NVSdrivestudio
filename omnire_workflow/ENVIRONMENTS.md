@@ -6,6 +6,7 @@ Recommended conda environments:
 |---|---|
 | `drivestudio` | OmniRe training, Waymo preprocessing, eval, offset rendering |
 | `segformer` | sky/fine dynamic mask extraction |
+| `4D-humans` | optional human pose extraction when preprocessed SMPL data is unavailable |
 | `waymo-kitti-viz` | Waymo-to-KITTI conversion and dataset visualization |
 
 ## `drivestudio`
@@ -35,3 +36,13 @@ Used for Waymo-to-KITTI conversion and point cloud/box visualization:
 ```bash
 bash omnire_workflow/dataset_visualization/setup_visualization_env.sh
 ```
+
+## Manual Assets
+
+These files cannot always be downloaded reliably or automatically from cloud servers:
+
+| Asset | Default path | Workflow |
+|---|---|---|
+| SegFormer B5 Cityscapes checkpoint | `../SegFormer/pretrained/segformer.b5.1024x1024.city.160k.pth` | `bash omnire_workflow/semantic_masks/download_segformer_checkpoint.sh` |
+| SMPL neutral model | `smpl_models/SMPL_NEUTRAL.pkl` | Download from SMPL official website due to license |
+| Waymo preprocessed human pose | `data/waymo/processed/training/<scene>/humanpose/smpl.pkl` | `bash omnire_workflow/human_pose/download_waymo_humanpose.sh` |
