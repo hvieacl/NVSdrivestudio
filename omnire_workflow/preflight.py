@@ -9,6 +9,7 @@ from typing import List, Optional
 
 
 DEFAULT_SCENES = "0 1 4 8 32 102 109 114 149 156"
+OFFICIAL_SMPL_FILENAME = "basicmodel_neutral_lbs_10_207_0_v1.1.0.pkl"
 
 
 def parse_ids(value: Optional[str]) -> List[int]:
@@ -31,12 +32,23 @@ def count_files(root: Path, pattern: str) -> int:
     return sum(1 for _ in root.glob(pattern))
 
 
+def find_official_smpl_model(search_root: Path) -> Optional[Path]:
+    direct = search_root / OFFICIAL_SMPL_FILENAME
+    if direct.exists() and direct.stat().st_size > 0:
+        return direct
+    for match in search_root.rglob(OFFICIAL_SMPL_FILENAME):
+        if match.exists() and match.stat().st_size > 0:
+            return match
+    return None
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scene_ids", default=DEFAULT_SCENES)
     parser.add_argument("--raw_dir", default="data/waymo/raw")
     parser.add_argument("--processed_root", default="data/waymo/processed/training")
     parser.add_argument("--smpl_model", default="smpl_models/SMPL_NEUTRAL.pkl")
+    parser.add_argument("--smpl_search_root", default="smpl_models")
     parser.add_argument("--check_imports", action="store_true")
     args = parser.parse_args()
 
@@ -69,7 +81,14 @@ def main() -> int:
     if smpl_model.exists() and smpl_model.stat().st_size > 0:
         print(f"[preflight] SMPL model OK: {smpl_model}")
     else:
-        print(f"[preflight] SMPL model MISSING: {smpl_model}")
+        official = find_official_smpl_model(Path(args.smpl_search_root))
+        if official:
+            print(f"[preflight] official SMPL file found: {official}")
+            print(f"[preflight] training target MISSING: {smpl_model}")
+            print("[preflight] run: conda run -n drivestudio python omnire_workflow/human_pose/cli.py prepare-smpl-model")
+        else:
+            print(f"[preflight] SMPL model MISSING: {smpl_model}")
+            print(f"[preflight] also searched for: {OFFICIAL_SMPL_FILENAME}")
         failed = True
 
     for scene_id in scenes:

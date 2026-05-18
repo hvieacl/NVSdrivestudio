@@ -20,6 +20,7 @@ if "%REQUIRE_HUMANPOSE%"=="" set "REQUIRE_HUMANPOSE=1"
 if "%AUTO_DOWNLOAD_HUMANPOSE%"=="" set "AUTO_DOWNLOAD_HUMANPOSE=1"
 if "%HUMANPOSE_ARCHIVE_NAME%"=="" set "HUMANPOSE_ARCHIVE_NAME=waymo_processed_humanpose.zip"
 if "%REQUIRE_SMPL_MODEL%"=="" set "REQUIRE_SMPL_MODEL=1"
+if "%AUTO_PREPARE_SMPL_MODEL%"=="" set "AUTO_PREPARE_SMPL_MODEL=1"
 if "%SMPL_MODEL%"=="" set "SMPL_MODEL=smpl_models\SMPL_NEUTRAL.pkl"
 if "%EXTRA_ARGS%"=="" set "EXTRA_ARGS="
 set "PYTHONPATH=%CD%"
@@ -45,6 +46,7 @@ if "%REQUIRE_HUMANPOSE%"=="1" (
   echo [workflow] Checking Waymo humanpose/SMPL prerequisites for scenes: %SCENE_IDS%
   set "HUMANPOSE_ARGS="
   if "%REQUIRE_SMPL_MODEL%"=="1" set "HUMANPOSE_ARGS=--require_smpl_model"
+  if "%AUTO_PREPARE_SMPL_MODEL%"=="1" set "HUMANPOSE_ARGS=!HUMANPOSE_ARGS! --auto_prepare_smpl_model"
   conda run -n "%ENV_NAME%" python omnire_workflow\human_pose\cli.py check --data_root data\waymo\processed\training --scene_ids "%SCENE_IDS%" --smpl_model "%SMPL_MODEL%" !HUMANPOSE_ARGS!
   if errorlevel 1 (
     if "%AUTO_DOWNLOAD_HUMANPOSE%"=="1" (

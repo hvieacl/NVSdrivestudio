@@ -36,6 +36,12 @@ to:
 smpl_models/SMPL_NEUTRAL.pkl
 ```
 
+The workflow can do the final rename/copy for you if the official file is under `smpl_models/`:
+
+```bash
+conda run -n drivestudio python omnire_workflow/human_pose/cli.py prepare-smpl-model
+```
+
 ## Download Preprocessed Waymo Human Pose
 
 DriveStudio provides preprocessed humanpose for the Waymo example scenes:

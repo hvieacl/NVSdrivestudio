@@ -245,7 +245,11 @@ class WaymoToKITTI(object):
                 :param frame_idx: the current frame number
                 :return:
                 """
-        range_images, camera_projections, range_image_top_pose = parse_range_image_and_camera_projection(frame)
+        parsed_range_data = parse_range_image_and_camera_projection(frame)
+        if len(parsed_range_data) == 4:
+            range_images, camera_projections, _, range_image_top_pose = parsed_range_data
+        else:
+            range_images, camera_projections, range_image_top_pose = parsed_range_data
         points_0, cp_points_0, intensity_0 = self.convert_range_image_to_point_cloud(
             frame,
             range_images,

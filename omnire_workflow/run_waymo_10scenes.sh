@@ -25,6 +25,7 @@ REQUIRE_HUMANPOSE="${REQUIRE_HUMANPOSE:-1}"
 AUTO_DOWNLOAD_HUMANPOSE="${AUTO_DOWNLOAD_HUMANPOSE:-1}"
 HUMANPOSE_ARCHIVE_NAME="${HUMANPOSE_ARCHIVE_NAME:-waymo_processed_humanpose.zip}"
 REQUIRE_SMPL_MODEL="${REQUIRE_SMPL_MODEL:-1}"
+AUTO_PREPARE_SMPL_MODEL="${AUTO_PREPARE_SMPL_MODEL:-1}"
 SMPL_MODEL="${SMPL_MODEL:-smpl_models/SMPL_NEUTRAL.pkl}"
 EXTRA_ARGS="${EXTRA_ARGS:-}"
 
@@ -73,6 +74,9 @@ if [[ "$REQUIRE_HUMANPOSE" == "1" ]]; then
   humanpose_args=()
   if [[ "$REQUIRE_SMPL_MODEL" == "1" ]]; then
     humanpose_args+=(--require_smpl_model)
+  fi
+  if [[ "$AUTO_PREPARE_SMPL_MODEL" == "1" ]]; then
+    humanpose_args+=(--auto_prepare_smpl_model)
   fi
   if ! conda run -n "$ENV_NAME" python omnire_workflow/human_pose/cli.py check \
     --data_root data/waymo/processed/training \
