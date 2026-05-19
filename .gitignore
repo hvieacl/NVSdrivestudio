@@ -202,6 +202,8 @@ visualization_outputs/
 *.mov
 *.ply
 !omnire_workflow/**/*.sh
+!waymo_workflow/**/*.sh
+!nuscenes_workflow/**/*.sh
 
 # Bundled external tools: keep source code, ignore generated/sample datasets.
 external_tools/**/data/
