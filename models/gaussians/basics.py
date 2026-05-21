@@ -159,6 +159,14 @@ class dataclass_gs:
         else:
             return self._quats
         
+def _ensure_adam_state(param_state, params):
+    if "exp_avg" not in param_state:
+        param_state["exp_avg"] = torch.zeros_like(params)
+    if "exp_avg_sq" not in param_state:
+        param_state["exp_avg_sq"] = torch.zeros_like(params)
+    return param_state
+
+
 def remove_from_optim(optimizer, deleted_mask, param_dict):
     """removes the deleted_mask from the optimizer provided"""
     for group_idx, group in enumerate(optimizer.param_groups):
@@ -168,6 +176,7 @@ def remove_from_optim(optimizer, deleted_mask, param_dict):
             new_params = param_dict[name]
             assert len(new_params) == 1
             param_state = optimizer.state[old_params]
+            param_state = _ensure_adam_state(param_state, old_params)
             del optimizer.state[old_params]
 
             # Modify the state directly without deleting and reassigning.
@@ -188,6 +197,7 @@ def dup_in_optim(optimizer, dup_mask, param_dict, n=2):
             old_params = group["params"][0]
             new_params = param_dict[name]
             param_state = optimizer.state[old_params]
+            param_state = _ensure_adam_state(param_state, old_params)
             repeat_dims = (n,) + tuple(1 for _ in range(param_state["exp_avg"].dim() - 1))
             param_state["exp_avg"] = torch.cat(
                 [param_state["exp_avg"], torch.zeros_like(param_state["exp_avg"][dup_mask.squeeze()]).repeat(*repeat_dims)],
